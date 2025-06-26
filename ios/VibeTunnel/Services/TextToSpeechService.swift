@@ -1,8 +1,9 @@
 import Foundation
 import AVFoundation
 
+@MainActor
 @Observable
-final class TextToSpeechService: NSObject, @unchecked Sendable {
+final class TextToSpeechService: NSObject {
     private let synthesizer = AVSpeechSynthesizer()
     
     var isSpeaking: Bool {
@@ -87,19 +88,19 @@ final class TextToSpeechService: NSObject, @unchecked Sendable {
 }
 
 extension TextToSpeechService: AVSpeechSynthesizerDelegate {
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
         print("Started speaking")
     }
     
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         print("Finished speaking")
     }
     
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didPause utterance: AVSpeechUtterance) {
         print("Paused speaking")
     }
     
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
         print("Resumed speaking")
     }
 }

@@ -2,8 +2,9 @@ import Foundation
 import Speech
 import AVFoundation
 
+@MainActor
 @Observable
-final class SpeechRecognitionService: NSObject, @unchecked Sendable {
+final class SpeechRecognitionService: NSObject {
     private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "ja-JP"))
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
@@ -20,7 +21,7 @@ final class SpeechRecognitionService: NSObject, @unchecked Sendable {
     
     private func requestAuthorization() {
         SFSpeechRecognizer.requestAuthorization { [weak self] status in
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 self?.authorizationStatus = status
             }
         }
