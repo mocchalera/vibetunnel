@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 /// Terminal event types that match the server's output.
 enum TerminalWebSocketEvent {
@@ -85,14 +86,20 @@ class BufferWebSocketClient: NSObject {
     }
     
     func connect() {
-        guard !isConnecting else { return }
+        guard !isConnecting else { 
+            logger.debug("Already connecting, skipping")
+            return 
+        }
         guard let baseURL else {
+            logger.error("No base URL configured")
             connectionError = WebSocketError.invalidURL
             return
         }
 
         isConnecting = true
         connectionError = nil
+        
+        logger.debug("WebSocket接続開始: \(baseURL)")
 
         // Convert HTTP URL to WebSocket URL
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
@@ -123,11 +130,14 @@ class BufferWebSocketClient: NSObject {
         }
 
         // Connect
-        Task {
+        Task { @MainActor in
             do {
+                logger.debug("WebSocket接続試行中: \(wsURL)")
                 try await webSocket?.connect(to: wsURL, with: headers)
+                logger.debug("WebSocket接続リクエスト送信完了")
             } catch {
-                logger.error("Connection failed: \(error)")
+                logger.error("WebSocket接続失敗: \(error)")
+                logger.error("エラー詳細: \(error.localizedDescription)")
                 connectionError = error
                 isConnecting = false
                 scheduleReconnect()
@@ -670,6 +680,44 @@ class BufferWebSocketClient: NSObject {
                 }
             }
         }
+        
+        // Configure URLSession for background operation
+        configureForBackground()
+    }
+    
+    private func configureForBackground() {
+        // バックグラウンドでも接続を維持するための設定
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppDidEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAppWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+    }
+    
+    @objc private func handleAppDidEnterBackground() {
+        logger.info("App entered background, maintaining WebSocket connection")
+        // バックグラウンドでも接続を維持
+        if isConnected {
+            Task {
+                try? await sendMessage(["type": "keepalive", "background": true])
+            }
+        }
+    }
+    
+    @objc private func handleAppWillEnterForeground() {
+        logger.info("App will enter foreground, checking connection")
+        // フォアグラウンドに戻ったら接続状態を確認
+        if !isConnected && subscriptions.count > 0 {
+            connect()
+        }
     }
 
     private func stopPingTask() {
@@ -718,6 +766,7 @@ class BufferWebSocketClient: NSObject {
     deinit {
         // Tasks will be cancelled automatically when the object is deallocated
         // WebSocket cleanup happens in disconnect()
+        NotificationCenter.default.removeObserver(self)
     }
 }
 

@@ -109,7 +109,7 @@ struct ConnectionView: View {
 
     private func connectToServer() {
         guard networkMonitor.isConnected else {
-            viewModel.errorMessage = "No internet connection available"
+            viewModel.errorMessage = "インターネット接続がありません"
             return
         }
 
@@ -150,55 +150,73 @@ class ConnectionViewModel {
         errorMessage = nil
 
         guard !host.isEmpty else {
-            errorMessage = "Please enter a server address"
+            errorMessage = "サーバーアドレスを入力してください"
             return
         }
 
         guard let portNumber = Int(port), portNumber > 0, portNumber <= 65_535 else {
-            errorMessage = "Please enter a valid port number"
+            errorMessage = "有効なポート番号を入力してください"
             return
         }
 
         isConnecting = true
+        
+        print("🔵 === VibeTunnel 接続デバッグ開始 ===")
+        print("🔵 ホスト: \(host)")
+        print("🔵 ポート: \(port)")
+        print("🔵 タイムスタンプ: \(Date())")
 
         let config = ServerConfig(
             host: host,
             port: portNumber,
             name: name.isEmpty ? nil : name
         )
+        
+        print("🔵 接続URL: \(config.baseURL)")
 
         do {
             // Test basic connectivity by checking health endpoint
             let url = config.baseURL.appendingPathComponent("api/health")
+            print("🔵 ヘルスチェックURL: \(url)")
             let request = URLRequest(url: url)
+            print("🔵 URLリクエスト送信中...")
             let (_, response) = try await URLSession.shared.data(for: request)
+            
+            print("🔵 レスポンス受信: \(response)")
 
             if let httpResponse = response as? HTTPURLResponse,
                httpResponse.statusCode == 200
             {
+                print("✅ 接続成功！")
                 // Connection successful, save config and trigger authentication
                 pendingServerConfig = config
                 onSuccess(config)
             } else {
-                errorMessage = "Failed to connect to server"
+                print("🔴 HTTPステータスエラー: \((response as? HTTPURLResponse)?.statusCode ?? -1)")
+                errorMessage = "サーバーへの接続に失敗しました"
             }
         } catch {
+            print("🔴 エラーキャッチ: \(error)")
+            print("🔴 エラータイプ: \(type(of: error))")
+            
             if let urlError = error as? URLError {
+                print("🔴 URLErrorコード: \(urlError.code.rawValue)")
                 switch urlError.code {
                 case .notConnectedToInternet:
-                    errorMessage = "No internet connection"
+                    errorMessage = "インターネット接続がありません"
                 case .cannotFindHost:
-                    errorMessage = "Cannot find server"
+                    errorMessage = "サーバーが見つかりません"
                 case .cannotConnectToHost:
-                    errorMessage = "Cannot connect to server"
+                    errorMessage = "サーバーに接続できません"
                 case .timedOut:
-                    errorMessage = "Connection timed out"
+                    errorMessage = "接続がタイムアウトしました"
                 default:
-                    errorMessage = "Connection failed: \(error.localizedDescription)"
+                    errorMessage = "接続失敗: \(error.localizedDescription)"
                 }
             } else {
-                errorMessage = "Connection failed: \(error.localizedDescription)"
+                errorMessage = "接続失敗: \(error.localizedDescription)"
             }
+            print("🔴 最終エラーメッセージ: \(errorMessage ?? "nil")")
         }
 
         isConnecting = false

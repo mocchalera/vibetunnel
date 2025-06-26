@@ -30,9 +30,23 @@ struct ServerConfig: Codable, Equatable {
     var baseURL: URL {
         // Handle IPv6 addresses by wrapping in brackets
         let formattedHost = host.contains(":") && !host.hasPrefix("[") ? "[\(host)]" : host
-        // This should always succeed with valid host and port
-        // Fallback ensures we always have a valid URL
-        return URL(string: "http://\(formattedHost):\(port)") ?? URL(fileURLWithPath: "/")
+        
+        // HTTPとHTTPSの両方に対応
+        let urlString: String
+        if host.hasPrefix("http://") || host.hasPrefix("https://") {
+            // すでにプロトコルが含まれている場合
+            urlString = "\(host):\(port)"
+        } else {
+            // プロトコルがない場合はhttpを追加
+            urlString = "http://\(formattedHost):\(port)"
+        }
+        
+        guard let url = URL(string: urlString) else {
+            print("⚠️ 無効なURL: \(urlString)")
+            return URL(fileURLWithPath: "/")
+        }
+        
+        return url
     }
 
     /// User-friendly display name for the server.

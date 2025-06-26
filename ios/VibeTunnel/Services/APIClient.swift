@@ -16,57 +16,57 @@ enum APIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL:
-            return "Invalid URL"
+            return "無効なURL"
         case .noData:
-            return "No data received"
+            return "データを受信できませんでした"
         case .decodingError(let error):
-            return "Failed to decode response: \(error.localizedDescription)"
+            return "レスポンスの解析に失敗しました: \(error.localizedDescription)"
         case .serverError(let code, let message):
             if let message {
                 return message
             }
             switch code {
             case 400:
-                return "Bad request - check your input"
+                return "不正なリクエスト - 入力を確認してください"
             case 401:
-                return "Unauthorized - authentication required"
+                return "認証が必要です"
             case 403:
-                return "Forbidden - access denied"
+                return "アクセスが拒否されました"
             case 404:
-                return "Not found - endpoint doesn't exist"
+                return "エンドポイントが見つかりません"
             case 500:
-                return "Server error - internal server error"
+                return "サーバーエラー"
             case 502:
-                return "Bad gateway - server is down"
+                return "ゲートウェイエラー - サーバーがダウンしています"
             case 503:
-                return "Service unavailable"
+                return "サービス利用不可"
             default:
-                return "Server error: \(code)"
+                return "サーバーエラー: \(code)"
             }
         case .networkError(let error):
             if let urlError = error as? URLError {
                 switch urlError.code {
                 case .notConnectedToInternet:
-                    return "No internet connection"
+                    return "インターネット接続がありません"
                 case .cannotFindHost:
-                    return "Cannot find server - check the address"
+                    return "サーバーが見つかりません - アドレスを確認してください"
                 case .cannotConnectToHost:
-                    return "Cannot connect to server - is it running?"
+                    return "サーバーに接続できません - 起動していますか？"
                 case .timedOut:
-                    return "Connection timed out"
+                    return "接続がタイムアウトしました"
                 case .networkConnectionLost:
-                    return "Network connection lost"
+                    return "ネットワーク接続が失われました"
                 default:
                     return urlError.localizedDescription
                 }
             }
             return error.localizedDescription
         case .noServerConfigured:
-            return "No server configured"
+            return "サーバーが設定されていません"
         case .invalidResponse:
-            return "Invalid server response"
+            return "不正なサーバーレスポンス"
         case .resizeDisabledByServer:
-            return "Terminal resizing is disabled by the server"
+            return "ターミナルのサイズ変更はサーバーによって無効化されています"
         }
     }
 }

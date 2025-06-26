@@ -29,11 +29,11 @@ struct ServerConfigForm: View {
             VStack(spacing: Theme.Spacing.large) {
                 // Host/IP Field
                 VStack(alignment: .leading, spacing: Theme.Spacing.small) {
-                    Label("Server Address", systemImage: "network")
+                    Label("サーバーアドレス", systemImage: "network")
                         .font(Theme.Typography.terminalSystem(size: 12))
                         .foregroundColor(Theme.Colors.primaryAccent)
 
-                    TextField("192.168.1.100 or localhost", text: $host)
+                    TextField("192.168.1.100 または localhost", text: $host)
                         .textFieldStyle(TerminalTextFieldStyle())
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
@@ -46,7 +46,7 @@ struct ServerConfigForm: View {
 
                 // Port Field
                 VStack(alignment: .leading, spacing: Theme.Spacing.small) {
-                    Label("Port", systemImage: "number.circle")
+                    Label("ポート", systemImage: "number.circle")
                         .font(Theme.Typography.terminalSystem(size: 12))
                         .foregroundColor(Theme.Colors.primaryAccent)
 
@@ -62,11 +62,11 @@ struct ServerConfigForm: View {
 
                 // Name Field (Optional)
                 VStack(alignment: .leading, spacing: Theme.Spacing.small) {
-                    Label("Connection Name (Optional)", systemImage: "tag")
+                    Label("接続名 (任意)", systemImage: "tag")
                         .font(Theme.Typography.terminalSystem(size: 12))
                         .foregroundColor(Theme.Colors.primaryAccent)
 
-                    TextField("My Mac", text: $name)
+                    TextField("例: メインPC", text: $name)
                         .textFieldStyle(TerminalTextFieldStyle())
                         .focused($focusedField, equals: .name)
                         .submitLabel(.done)
@@ -104,14 +104,14 @@ struct ServerConfigForm: View {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: Theme.Colors.terminalBackground))
                             .scaleEffect(0.8)
-                        Text("Connecting...")
+                        Text("接続中...")
                             .font(Theme.Typography.terminalSystem(size: 16))
                     }
                     .frame(maxWidth: .infinity)
                 } else if !networkMonitor.isConnected {
                     HStack(spacing: Theme.Spacing.small) {
                         Image(systemName: "wifi.slash")
-                        Text("No Internet Connection")
+                        Text("インターネット接続なし")
                     }
                     .font(Theme.Typography.terminalSystem(size: 16))
                     .fontWeight(.semibold)
@@ -119,7 +119,7 @@ struct ServerConfigForm: View {
                 } else {
                     HStack(spacing: Theme.Spacing.small) {
                         Image(systemName: "bolt.fill")
-                        Text("Connect")
+                        Text("接続")
                     }
                     .font(Theme.Typography.terminalSystem(size: 16))
                     .fontWeight(.semibold)

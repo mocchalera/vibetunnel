@@ -31,8 +31,6 @@ struct TerminalView: View {
     @State private var currentTerminalWidth: TerminalWidth = .unlimited
     @State private var showingFullscreenInput = false
     @State private var showingCtrlKeyGrid = false
-    @State private var speechRecognition = SpeechRecognitionService()
-    @State private var textToSpeech = TextToSpeechService()
     @State private var showingVoiceInputAlert = false
     @FocusState private var isInputFocused: Bool
 
@@ -169,6 +167,7 @@ struct TerminalView: View {
                     }
             }
         }
+        .handsFreeIndicator()
     }
 
     // MARK: - Export Functions
@@ -210,7 +209,7 @@ struct TerminalView: View {
     private var navigationToolbarItems: some ToolbarContent {
         Group {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button("Close") {
+                Button("閉じる") {
                     dismiss()
                 }
                 .foregroundColor(Theme.Colors.primaryAccent)
@@ -293,35 +292,50 @@ struct TerminalView: View {
     @ViewBuilder
     private var terminalMenuItems: some View {
         Button(action: { viewModel.clearTerminal() }, label: {
-            Label("Clear", systemImage: "clear")
+            Label("クリア", systemImage: "clear")
         })
 
         Button(action: { showingFullscreenInput = true }, label: {
-            Label("Compose Command", systemImage: "text.viewfinder")
+            Label("コマンド作成", systemImage: "text.viewfinder")
         })
 
         Button(action: { showingCtrlKeyGrid = true }, label: {
-            Label("Ctrl Shortcuts", systemImage: "command.square")
+            Label("Ctrlショートカット", systemImage: "command.square")
         })
 
         Divider()
 
         Menu {
             Button(action: { handleReadLastLine() }, label: {
-                Label("Read Last Line", systemImage: "speaker.wave.2")
+                Label("最後の行を読み上げ", systemImage: "speaker.wave.2")
             })
 
             Button(action: { handleReadBuffer() }, label: {
-                Label("Read All", systemImage: "speaker.wave.3")
+                Label("すべて読み上げ", systemImage: "speaker.wave.3")
             })
+            
+            Toggle(isOn: $viewModel.isAutoSpeakEnabled) {
+                Label("自動読み上げ", systemImage: "speaker.wave.2.circle")
+            }
+            
+            Toggle(isOn: $viewModel.isHandsFreeMode) {
+                Label("ハンズフリーモード", systemImage: "person.wave.2")
+            }
+            .onChange(of: viewModel.isHandsFreeMode) { _, newValue in
+                if newValue {
+                    viewModel.backgroundVoice.startBackgroundMode(sessionId: session.id)
+                } else {
+                    viewModel.backgroundVoice.stopBackgroundMode()
+                }
+            }
 
-            if textToSpeech.isSpeaking {
-                Button(action: { textToSpeech.stop() }, label: {
-                    Label("Stop Speaking", systemImage: "stop.circle")
+            if viewModel.textToSpeech.isSpeaking == true {
+                Button(action: { viewModel.textToSpeech.stop() }, label: {
+                    Label("読み上げを停止", systemImage: "stop.circle")
                 })
             }
         } label: {
-            Label("Text to Speech", systemImage: "speaker")
+            Label("音声読み上げ", systemImage: "speaker")
         }
 
         Divider()
@@ -331,7 +345,7 @@ struct TerminalView: View {
                 fontSize = max(8, fontSize - 1)
                 HapticFeedback.impact(.light)
             }, label: {
-                Label("Decrease", systemImage: "minus")
+                Label("小さく", systemImage: "minus")
             })
             .disabled(fontSize <= 8)
 
@@ -339,7 +353,7 @@ struct TerminalView: View {
                 fontSize = min(32, fontSize + 1)
                 HapticFeedback.impact(.light)
             }, label: {
-                Label("Increase", systemImage: "plus")
+                Label("大きく", systemImage: "plus")
             })
             .disabled(fontSize >= 32)
 
@@ -347,40 +361,40 @@ struct TerminalView: View {
                 fontSize = 14
                 HapticFeedback.impact(.light)
             }, label: {
-                Label("Reset to Default", systemImage: "arrow.counterclockwise")
+                Label("デフォルトに戻す", systemImage: "arrow.counterclockwise")
             })
             .disabled(fontSize == 14)
 
             Divider()
 
             Button(action: { showingFontSizeSheet = true }, label: {
-                Label("More Options...", systemImage: "slider.horizontal.3")
+                Label("詳細設定...", systemImage: "slider.horizontal.3")
             })
         } label: {
-            Label("Font Size (\(Int(fontSize))pt)", systemImage: "textformat.size")
+            Label("フォントサイズ (\(Int(fontSize))pt)", systemImage: "textformat.size")
         }
 
         Button(action: { showingTerminalWidthSheet = true }, label: {
-            Label("Terminal Width", systemImage: "arrow.left.and.right")
+            Label("ターミナル幅", systemImage: "arrow.left.and.right")
         })
 
         Button(action: { viewModel.toggleFitToWidth() }, label: {
             Label(
-                viewModel.fitToWidth ? "Fixed Width" : "Fit to Width",
+                viewModel.fitToWidth ? "固定幅" : "画面に合わせる",
                 systemImage: viewModel.fitToWidth ? "arrow.left.and.right.square" : "arrow.left.and.right.square.fill"
             )
         })
 
         Button(action: { showingTerminalThemeSheet = true }, label: {
-            Label("Theme", systemImage: "paintbrush")
+            Label("テーマ", systemImage: "paintbrush")
         })
 
         Button(action: { viewModel.copyBuffer() }, label: {
-            Label("Copy All", systemImage: "square.on.square")
+            Label("すべてコピー", systemImage: "square.on.square")
         })
 
         Button(action: { exportTerminalBuffer() }, label: {
-            Label("Export as Text", systemImage: "square.and.arrow.up")
+            Label("テキストとしてエクスポート", systemImage: "square.and.arrow.up")
         })
 
         Divider()
@@ -399,17 +413,17 @@ struct TerminalView: View {
                 viewModel.stopRecording()
                 showingRecordingSheet = true
             }, label: {
-                Label("Stop Recording", systemImage: "stop.circle.fill")
+                Label("録画を停止", systemImage: "stop.circle.fill")
                     .foregroundColor(.red)
             })
         } else {
             Button(action: { viewModel.startRecording() }, label: {
-                Label("Start Recording", systemImage: "record.circle")
+                Label("録画を開始", systemImage: "record.circle")
             })
         }
 
         Button(action: { showingRecordingSheet = true }, label: {
-            Label("Export Recording", systemImage: "square.and.arrow.up")
+            Label("録画をエクスポート", systemImage: "square.and.arrow.up")
         })
         .disabled(viewModel.castRecorder.events.isEmpty)
     }
@@ -569,22 +583,25 @@ struct TerminalView: View {
                     },
                     onRawInput: { input in
                         viewModel.sendInput(input)
+                    },
+                    onVoiceInput: {
+                        handleVoiceInput()
                     }
                 )
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .alert("Voice Input", isPresented: $showingVoiceInputAlert) {
-            Button("Cancel", role: .cancel) {
-                if speechRecognition.isRecording {
-                    speechRecognition.stopRecording()
+        .alert("音声入力", isPresented: $showingVoiceInputAlert) {
+            Button("キャンセル", role: .cancel) {
+                if viewModel.speechRecognition.isRecording == true {
+                    viewModel.speechRecognition.stopRecording()
                 }
             }
         } message: {
-            if speechRecognition.authorizationStatus != .authorized {
-                Text("Please enable microphone access in Settings to use voice input.")
+            if viewModel.speechRecognition.authorizationStatus != .authorized {
+                Text("マイクへのアクセスを設定で有効にしてください。")
             } else {
-                Text(speechRecognition.isRecording ? "Listening... Tap Cancel to stop." : "Tap the microphone button to start.")
+                Text(viewModel.speechRecognition.isRecording == true ? "聞いています... キャンセルをタップして停止" : "マイクボタンをタップして開始")
             }
         }
     }
@@ -592,6 +609,8 @@ struct TerminalView: View {
     // MARK: - Voice Features
 
     private func handleVoiceInput() {
+        let speechRecognition = viewModel.speechRecognition
+        
         if speechRecognition.authorizationStatus != .authorized {
             showingVoiceInputAlert = true
             return
@@ -618,14 +637,14 @@ struct TerminalView: View {
 
     private func handleReadLastLine() {
         if let bufferContent = viewModel.getBufferContent() {
-            textToSpeech.speakLastLine(from: bufferContent)
+            viewModel.textToSpeech.speakLastLine(from: bufferContent)
             HapticFeedback.impact(.light)
         }
     }
 
     private func handleReadBuffer() {
         if let bufferContent = viewModel.getBufferContent() {
-            textToSpeech.speak(bufferContent)
+            viewModel.textToSpeech.speak(bufferContent)
             HapticFeedback.impact(.light)
         }
     }
@@ -646,6 +665,8 @@ class TerminalViewModel {
     var isResizeBlockedByServer = false
     var isAtBottom = true
     var fitToWidth = false
+    var isAutoSpeakEnabled = false
+    var isHandsFreeMode = false
 
     let session: Session
     let castRecorder: CastRecorder
@@ -653,6 +674,9 @@ class TerminalViewModel {
     private var connectionStatusTask: Task<Void, Never>?
     private var connectionErrorTask: Task<Void, Never>?
     weak var terminalCoordinator: AnyObject? // Can be TerminalHostingView.Coordinator
+    let speechRecognition = SpeechRecognitionService()
+    let textToSpeech = TextToSpeechService()
+    let backgroundVoice = BackgroundVoiceService.shared
 
     init(session: Session) {
         self.session = session
@@ -794,6 +818,26 @@ class TerminalViewModel {
                     }
                 }
             }
+            
+            // 自動読み上げが有効な場合、出力を音声で読み上げ
+            if viewModel.isAutoSpeakEnabled, let textToSpeech = viewModel.textToSpeech {
+                // バイナリデータをテキストに変換
+                if let text = String(data: data, encoding: .utf8) {
+                    // 制御文字を除去
+                    let cleanedText = text.replacingOccurrences(of: "\u{001B}\\[[0-9;]*m", with: "", options: .regularExpression)
+                                         .trimmingCharacters(in: .whitespacesAndNewlines)
+                    
+                    if !cleanedText.isEmpty {
+                        textToSpeech.speak(cleanedText)
+                    }
+                }
+            }
+            
+            // ハンズフリーモードの場合もバックグラウンドサービスに送信
+            if viewModel.isHandsFreeMode, let text = String(data: data, encoding: .utf8) {
+                viewModel.backgroundVoice.handleTerminalOutput(text)
+            }
+            
             // Record output if recording
             castRecorder.recordOutput(data)
 

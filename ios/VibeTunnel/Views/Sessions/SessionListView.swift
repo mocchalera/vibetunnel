@@ -106,14 +106,14 @@ struct SessionListView: View {
                                 HapticFeedback.impact(.light)
                                 showingSettings = true
                             }, label: {
-                                Label("Settings", systemImage: "gearshape")
+                                Label("設定", systemImage: "gearshape")
                             })
 
                             Button(action: {
                                 HapticFeedback.impact(.light)
                                 showingCastImporter = true
                             }, label: {
-                                Label("Import Recording", systemImage: "square.and.arrow.down")
+                                Label("録画をインポート", systemImage: "square.and.arrow.down")
                             })
                         } label: {
                             Image(systemName: "ellipsis.circle")
@@ -229,12 +229,12 @@ struct SessionListView: View {
             }
 
             VStack(spacing: Theme.Spacing.small) {
-                Text("No Sessions")
+                Text("セッションがありません")
                     .font(.title2)
                     .fontWeight(.semibold)
                     .foregroundColor(Theme.Colors.terminalForeground)
 
-                Text("Create a new terminal session to get started")
+                Text("新しいターミナルセッションを作成して始めましょう")
                     .font(Theme.Typography.terminalSystem(size: 14))
                     .foregroundColor(Theme.Colors.terminalForeground.opacity(0.7))
                     .multilineTextAlignment(.center)
@@ -246,7 +246,7 @@ struct SessionListView: View {
             }, label: {
                 HStack(spacing: Theme.Spacing.small) {
                     Image(systemName: "plus.circle")
-                    Text("Create Session")
+                    Text("セッションを作成")
                 }
                 .font(Theme.Typography.terminalSystem(size: 16))
                 .fontWeight(.medium)
@@ -263,18 +263,18 @@ struct SessionListView: View {
                 .foregroundColor(Theme.Colors.terminalForeground.opacity(0.3))
 
             VStack(spacing: Theme.Spacing.small) {
-                Text("No sessions found")
+                Text("セッションが見つかりません")
                     .font(.title2)
                     .fontWeight(.semibold)
                     .foregroundColor(Theme.Colors.terminalForeground)
 
-                Text("Try searching with different keywords")
+                Text("別のキーワードで検索してください")
                     .font(Theme.Typography.terminalSystem(size: 14))
                     .foregroundColor(Theme.Colors.terminalForeground.opacity(0.7))
             }
 
             Button(action: { searchText = "" }, label: {
-                Label("Clear Search", systemImage: "xmark.circle.fill")
+                Label("検索をクリア", systemImage: "xmark.circle.fill")
                     .font(Theme.Typography.terminalSystem(size: 14))
             })
             .terminalButton()
@@ -358,12 +358,12 @@ struct SessionListView: View {
             }
 
             VStack(spacing: Theme.Spacing.small) {
-                Text("No Internet Connection")
+                Text("インターネット接続なし")
                     .font(.title2)
                     .fontWeight(.semibold)
                     .foregroundColor(Theme.Colors.terminalForeground)
 
-                Text("Unable to load sessions while offline")
+                Text("オフラインではセッションを読み込めません")
                     .font(Theme.Typography.terminalSystem(size: 14))
                     .foregroundColor(Theme.Colors.terminalForeground.opacity(0.7))
                     .multilineTextAlignment(.center)
@@ -377,7 +377,7 @@ struct SessionListView: View {
             }, label: {
                 HStack(spacing: Theme.Spacing.small) {
                     Image(systemName: "arrow.clockwise")
-                    Text("Retry")
+                    Text("再試行")
                 }
                 .font(Theme.Typography.terminalSystem(size: 16))
                 .fontWeight(.medium)
@@ -405,10 +405,25 @@ class SessionListViewModel {
         }
 
         do {
+            logger.debug("セッション一覧を取得中...")
             sessions = try await sessionService.getSessions()
             errorMessage = nil
+            logger.debug("セッション取得成功: \(sessions.count)件")
         } catch {
-            errorMessage = error.localizedDescription
+            logger.error("セッション取得エラー: \(error)")
+            // APIエラーの場合、より詳細なメッセージを設定
+            if let apiError = error as? APIError {
+                switch apiError {
+                case .noServerConfigured:
+                    errorMessage = "サーバーが設定されていません"
+                case .networkError:
+                    errorMessage = "ネットワーク接続を確認してください"
+                default:
+                    errorMessage = error.localizedDescription
+                }
+            } else {
+                errorMessage = error.localizedDescription
+            }
         }
 
         isLoading = false
@@ -471,13 +486,13 @@ struct SessionHeaderView: View {
             // Session counts
             HStack(spacing: Theme.Spacing.extraLarge) {
                 SessionCountBadge(
-                    label: "Running",
+                    label: "実行中",
                     count: runningCount,
                     color: Theme.Colors.successAccent
                 )
 
                 SessionCountBadge(
-                    label: "Exited",
+                    label: "終了済み",
                     count: exitedCount,
                     color: Theme.Colors.errorAccent
                 )
