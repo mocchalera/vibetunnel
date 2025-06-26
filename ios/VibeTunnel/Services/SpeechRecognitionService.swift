@@ -3,7 +3,7 @@ import Speech
 import AVFoundation
 
 @Observable
-class SpeechRecognitionService: NSObject {
+final class SpeechRecognitionService: NSObject, @unchecked Sendable {
     private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "ja-JP"))
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?

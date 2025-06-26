@@ -304,6 +304,26 @@ struct TerminalView: View {
         Divider()
 
         Menu {
+            Button(action: { handleReadLastLine() }, label: {
+                Label("Read Last Line", systemImage: "speaker.wave.2")
+            })
+
+            Button(action: { handleReadBuffer() }, label: {
+                Label("Read All", systemImage: "speaker.wave.3")
+            })
+
+            if textToSpeech.isSpeaking {
+                Button(action: { textToSpeech.stop() }, label: {
+                    Label("Stop Speaking", systemImage: "stop.circle")
+                })
+            }
+        } label: {
+            Label("Text to Speech", systemImage: "speaker")
+        }
+
+        Divider()
+
+        Menu {
             Button(action: {
                 fontSize = max(8, fontSize - 1)
                 HapticFeedback.impact(.light)

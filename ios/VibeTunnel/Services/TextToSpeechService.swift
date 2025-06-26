@@ -2,7 +2,7 @@ import Foundation
 import AVFoundation
 
 @Observable
-class TextToSpeechService: NSObject {
+final class TextToSpeechService: NSObject, @unchecked Sendable {
     private let synthesizer = AVSpeechSynthesizer()
     
     var isSpeaking: Bool {
