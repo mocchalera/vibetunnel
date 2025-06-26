@@ -31,6 +31,9 @@ struct TerminalView: View {
     @State private var currentTerminalWidth: TerminalWidth = .unlimited
     @State private var showingFullscreenInput = false
     @State private var showingCtrlKeyGrid = false
+    @State private var speechRecognition = SpeechRecognitionService()
+    @State private var textToSpeech = TextToSpeechService()
+    @State private var showingVoiceInputAlert = false
     @FocusState private var isInputFocused: Bool
 
     init(session: Session) {
