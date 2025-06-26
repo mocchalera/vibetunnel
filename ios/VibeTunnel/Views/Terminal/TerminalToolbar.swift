@@ -8,17 +8,20 @@ struct TerminalToolbar: View {
     let onSpecialKey: (TerminalInput.SpecialKey) -> Void
     let onDismissKeyboard: () -> Void
     let onRawInput: ((String) -> Void)?
+    let onVoiceInput: (() -> Void)?
     @State private var showMoreKeys = false
     @State private var showAdvancedKeyboard = false
 
     init(
         onSpecialKey: @escaping (TerminalInput.SpecialKey) -> Void,
         onDismissKeyboard: @escaping () -> Void,
-        onRawInput: ((String) -> Void)? = nil
+        onRawInput: ((String) -> Void)? = nil,
+        onVoiceInput: (() -> Void)? = nil
     ) {
         self.onSpecialKey = onSpecialKey
         self.onDismissKeyboard = onDismissKeyboard
         self.onRawInput = onRawInput
+        self.onVoiceInput = onVoiceInput
     }
 
     var body: some View {
@@ -75,6 +78,14 @@ struct TerminalToolbar: View {
                 }
 
                 Spacer()
+
+                // Voice input
+                if let onVoiceInput {
+                    ToolbarButton(systemImage: "mic.fill") {
+                        HapticFeedback.impact(.light)
+                        onVoiceInput()
+                    }
+                }
 
                 // Advanced keyboard
                 ToolbarButton(systemImage: "keyboard") {

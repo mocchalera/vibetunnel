@@ -551,6 +551,60 @@ struct TerminalView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        .alert("Voice Input", isPresented: $showingVoiceInputAlert) {
+            Button("Cancel", role: .cancel) {
+                if speechRecognition.isRecording {
+                    speechRecognition.stopRecording()
+                }
+            }
+        } message: {
+            if speechRecognition.authorizationStatus != .authorized {
+                Text("Please enable microphone access in Settings to use voice input.")
+            } else {
+                Text(speechRecognition.isRecording ? "Listening... Tap Cancel to stop." : "Tap the microphone button to start.")
+            }
+        }
+    }
+
+    // MARK: - Voice Features
+
+    private func handleVoiceInput() {
+        if speechRecognition.authorizationStatus != .authorized {
+            showingVoiceInputAlert = true
+            return
+        }
+
+        if speechRecognition.isRecording {
+            speechRecognition.stopRecording()
+            if !speechRecognition.recognizedText.isEmpty {
+                viewModel.sendInput(speechRecognition.recognizedText)
+                speechRecognition.recognizedText = ""
+            }
+            HapticFeedback.notification(.success)
+        } else {
+            do {
+                try speechRecognition.startRecording()
+                showingVoiceInputAlert = true
+                HapticFeedback.impact(.medium)
+            } catch {
+                logger.error("Failed to start speech recognition: \(error)")
+                HapticFeedback.notification(.error)
+            }
+        }
+    }
+
+    private func handleReadLastLine() {
+        if let bufferContent = viewModel.getBufferContent() {
+            textToSpeech.speakLastLine(from: bufferContent)
+            HapticFeedback.impact(.light)
+        }
+    }
+
+    private func handleReadBuffer() {
+        if let bufferContent = viewModel.getBufferContent() {
+            textToSpeech.speak(bufferContent)
+            HapticFeedback.impact(.light)
+        }
     }
 }
 
